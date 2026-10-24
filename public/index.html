@@ -52,7 +52,7 @@ function register(){
 function login(){
   let e=email.value,p=password.value;
   let u=users.find(x=>x.email===e && x.password===p);
-  if(!u){alert('Wrong credentials');return;}
+  if(!u){alert('Do you have an account? Please register');return;}
   localStorage.setItem('currentUser',JSON.stringify(u));
   showDashboard(u);
 }
