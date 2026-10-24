@@ -1,1 +1,29 @@
-
+<!DOCTYPE html>
+<html><head><title>Secure Document Access</title>
+<style>
+body{font-family:Arial;background:#f4f4f4;display:flex;justify-content:center;padding-top:50px}
+.box{background:white;padding:25px;border-radius:10px;width:350px;box-shadow:0 0 10px #ccc}
+input,select,button{width:100%;padding:10px;margin:8px 0;border-radius:5px;border:1px solid #ccc}
+button{background:#007bff;color:white;border:none;cursor:pointer}
+</style></head>
+<body>
+<div class="box">
+<div id="loginForm"><h2 style="text-align:center">Login</h2>
+<input id="email" placeholder="Email"><input id="password" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+<p style="text-align:center;color:blue" onclick="showRegister()">Account ledu? Register</p></div>
+<div id="registerForm" style="display:none"><h2 style="text-align:center">Register</h2>
+<input id="regEmail" placeholder="Email"><input id="regPassword" type="password" placeholder="Password">
+<select id="regRole"><option value="user">User</option><option value="admin">Admin</option></select>
+<button onclick="register()">Register</button>
+<p style="text-align:center;color:blue" onclick="showLogin()">Already have account? Login</p></div>
+<div id="dashboard" style="display:none"><h2>Dashboard</h2><p>Email: <span id="userEmail"></span></p>
+<button onclick="logout()" style="background:red">Logout</button></div></div>
+<script>
+let users=JSON.parse(localStorage.getItem('users')||'[]');
+function showRegister(){loginForm.style.display='none';registerForm.style.display='block';}
+function showLogin(){registerForm.style.display='none';loginForm.style.display='block';}
+function register(){let e=regEmail.value,p=regPassword.value,r=regRole.value;if(!e||!p){alert('Fill all');return;}if(users.find(u=>u.email===e)){alert('Already exists');showLogin();return;}users.push({email:e,password:p,role:r});localStorage.setItem('users',JSON.stringify(users));alert('Register Success!');showLogin();}
+function login(){let e=email.value,p=password.value;let u=users.find(x=>x.email===e && x.password===p);if(!u){alert('Do you have an account? Please register');return;}localStorage.setItem('currentUser',JSON.stringify(u));loginForm.style.display='none';dashboard.style.display='block';userEmail.innerText=u.email;}
+function logout(){localStorage.removeItem('currentUser');dashboard.style.display='none';loginForm.style.display='block';}
+</script></body></html>
