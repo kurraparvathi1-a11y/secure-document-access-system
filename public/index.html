@@ -1,97 +1,40 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Secure Document Access</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,sans-serif}
-body{background:#0f172a;color:#e2e8f0;min-height:100vh}
-.container{max-width:1100px;margin:0 auto;padding:20px}
-.card{background:#1e293b;border-radius:12px;padding:20px;margin-bottom:20px;border:1px solid #334155}
-.btn{background:#3b82f6;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer}
-.btn:hover{background:#2563eb}
-input,textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white;margin:8px 0}
-.hidden{display:none}
-.flex{display:flex;gap:12px;flex-wrap:wrap}
-.doc{border:1px solid #334155;padding:12px;border-radius:8px;margin:8px 0}
-.tag{font-size:11px;padding:2px 8px;border-radius:20px;background:#334155}
-</style></head>
-<body><div class="container">
-<h1 style="margin:20px 0">🔐 Secure Document Access System</h1>
-
-<div id="loginCard" class="card">
-<h3>Login</h3>
-<input id="email" placeholder="Email - admin@sec.com" value="admin@sec.com">
-<input id="password" type="password" placeholder="Password - admin123" value="admin123">
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Secure Docs</title>
+<style>body{background:#0f172a;color:#e2e8f0;font-family:sans-serif;display:flex;justify-content:center;padding:20px}.container{max-width:900px;width:100%}.card{background:#1e293b;padding:20px;border-radius:12px;margin-bottom:20px}.btn{background:#3b82f6;color:white;padding:8px 16px;border:none;border-radius:8px;cursor:pointer}input,textarea{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white}.hidden{display:none}.tag{background:#334155;padding:2px 8px;border-radius:20px;font-size:11px}.flex{display:flex;gap:20px;flex-wrap:wrap}</style>
+</head><body><div class="container">
+<h1>🔒 Secure Document Access System</h1>
+<div id="loginCard" class="card"><h3>Login</h3>
+<input id="email" value="admin@sec.com" placeholder="Email"><input id="password" type="password" value="admin123" placeholder="Password">
 <button class="btn" onclick="login()">Login</button>
-<p style="margin-top:10px;font-size:13px;color:#94a3b8">Demo: admin@sec.com / admin123 | manager@sec.com / manager123 | viewer@sec.com / viewer123</p>
-</div>
+<p style="color:#94a3b8;font-size:13px">Demo: admin@sec.com / admin123 | manager@sec.com / manager123 | viewer@sec.com / viewer123</p>
+<p id="msg" style="color:#f87171"></p></div>
 
 <div id="app" class="hidden">
 <div class="card flex"><div><b id="userInfo"></b> <span id="roleTag" class="tag"></span></div><button class="btn" onclick="logout()" style="margin-left:auto">Logout</button></div>
-
-<div class="flex">
-<div class="card" style="flex:2;min-width:300px">
-<h3>Documents <button class="btn" onclick="loadDocs()" style="float:right">Refresh</button></h3>
-<div id="docs"></div>
-<h4 style="margin-top:20px">Create Document</h4>
-<input id="docTitle" placeholder="Title"><textarea id="docContent" placeholder="Content"></textarea>
-<button class="btn" onclick="createDoc()">Create</button>
-</div>
-
-<div class="card" style="flex:1;min-width:300px">
-<h3>Audit Logs (Admin only)</h3>
-<div id="audit" style="max-height:500px;overflow:auto;font-size:12px"></div>
-<button class="btn" onclick="loadAudit()" style="margin-top:10px">Load Logs</button>
-<h3 style="margin-top:20px">Users (Admin/Manager)</h3>
-<div id="users" style="font-size:12px"></div>
-<button class="btn" onclick="loadUsers()" style="margin-top:10px">Load Users</button>
-</div>
-</div>
-</div>
-</div>
-
+<div class="flex"><div class="card" style="flex:2"><h3>Documents <button class="btn" onclick="loadDocs()" style="float:right">Refresh</button></h3><div id="docs"></div>
+<h4 style="margin-top:20px">Create Document</h4><input id="docTitle" placeholder="Title"><textarea id="docContent" placeholder="Content"></textarea><button class="btn" onclick="createDoc()">Create</button></div></div>
+</div></div>
 <script>
-const API = location.origin;
-let token = localStorage.getItem('token');
-if(token) showApp();
-
-async function login(){
- const res = await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email.value,password:password.value})});
- const data = await res.json();
- if(!res.ok) return alert(data.error);
- token=data.token; localStorage.setItem('token',token); showApp();
+const users = {
+ "admin@sec.com": {pass:"admin123", role:"Admin"},
+ "manager@sec.com": {pass:"manager123", role:"Manager"},
+ "viewer@sec.com": {pass:"viewer123", role:"Viewer"}
+};
+let currentUser=null;
+let docs=[{id:1,title:"Company Policy",content:"Confidential policy document",owner:"admin@sec.com"}];
+function login(){
+ let e=document.getElementById('email').value.trim().toLowerCase();
+ let p=document.getElementById('password').value.trim();
+ if(users[e] && users[e].pass===p){
+  currentUser={email:e,role:users[e].role};
+  document.getElementById('loginCard').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('userInfo').innerText=e;
+  document.getElementById('roleTag').innerText=users[e].role;
+  loadDocs();
+ } else { document.getElementById('msg').innerText='Invalid credentials - Use admin@sec.com / admin123'; }
 }
-function logout(){localStorage.removeItem('token');location.reload();}
-async function showApp(){
- loginCard.classList.add('hidden'); app.classList.remove('hidden');
- const res = await fetch(API+'/api/auth/me',{headers:{Authorization:'Bearer '+token}});
- const u = await res.json(); userInfo.textContent=u.name+' ('+u.email+')'; roleTag.textContent=u.role;
- loadDocs(); loadUsers(); loadAudit();
-}
-async function loadDocs(){
- const res = await fetch(API+'/api/documents',{headers:{Authorization:'Bearer '+token}});
- const list = await res.json();
- docs.innerHTML = list.map(d=>`<div class=doc><b>${d.title}</b> <span class=tag>${d.ownerEmail}</span><br><small>${(d.content||'').slice(0,100)}</small><br><button class=btn onclick="viewDoc('${d.id}')">View</button> <button class=btn onclick="delDoc('${d.id}')">Delete</button></div>`).join('')||'No docs';
-}
-async function viewDoc(id){
- const res = await fetch(API+'/api/documents/'+id,{headers:{Authorization:'Bearer '+token}});
- const d = await res.json(); alert(d.title+':\n\n'+d.content);
-}
-async function createDoc(){
- const res = await fetch(API+'/api/documents',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({title:docTitle.value,content:docContent.value})});
- if(res.ok){docTitle.value='';docContent.value='';loadDocs();}
-}
-async function delDoc(id){
- if(!confirm('Delete?')) return;
- await fetch(API+'/api/documents/'+id,{method:'DELETE',headers:{Authorization:'Bearer '+token}}); loadDocs();
-}
-async function loadAudit(){
- const res = await fetch(API+'/api/audit',{headers:{Authorization:'Bearer '+token}});
- if(!res.ok) return audit.innerHTML='Admin only';
- const logs = await res.json();
- audit.innerHTML = logs.slice(0,30).map(l=>`<div style="border-bottom:1px solid #334155;padding:4px 0">${l.timestamp?.slice(11,19)||''} <b>${l.action}</b> by ${l.userEmail} - ${l.details||''}</div>`).join('');
-}
-async function loadUsers(){
- const res = await fetch(API+'/api/users',{headers:{Authorization:'Bearer '+token}});
- if(!res.ok) return users.innerHTML='No access';
- const list = await res.json(); users.innerHTML = list.map(u=>`${u.name} - ${u.role}`).join('<br>');
-}
+function logout(){ currentUser=null; document.getElementById('app').classList.add('hidden'); document.getElementById('loginCard').classList.remove('hidden');}
+function loadDocs(){ let h=''; docs.forEach(d=>{h+=`<div style="border:1px solid #334155;padding:10px;border-radius:8px;margin:8px 0"><b>${d.title}</b><p>${d.content}</p><small>${d.owner}</small></div>`}); document.getElementById('docs').innerHTML=h||'No documents';}
+function createDoc(){ let t=document.getElementById('docTitle').value; let c=document.getElementById('docContent').value; if(!t||!c)return alert('Fill details'); docs.push({id:Date.now(),title:t,content:c,owner:currentUser.email}); document.getElementById('docTitle').value=''; document.getElementById('docContent').value=''; loadDocs(); }
 </script></body></html>
