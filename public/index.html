@@ -1,40 +1,69 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Secure Docs</title>
-<style>body{background:#0f172a;color:#e2e8f0;font-family:sans-serif;display:flex;justify-content:center;padding:20px}.container{max-width:900px;width:100%}.card{background:#1e293b;padding:20px;border-radius:12px;margin-bottom:20px}.btn{background:#3b82f6;color:white;padding:8px 16px;border:none;border-radius:8px;cursor:pointer}input,textarea{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white}.hidden{display:none}.tag{background:#334155;padding:2px 8px;border-radius:20px;font-size:11px}.flex{display:flex;gap:20px;flex-wrap:wrap}</style>
-</head><body><div class="container">
-<h1>🔒 Secure Document Access System</h1>
-<div id="loginCard" class="card"><h3>Login</h3>
-<input id="email" value="admin@sec.com" placeholder="Email"><input id="password" type="password" value="admin123" placeholder="Password">
-<button class="btn" onclick="login()">Login</button>
-<p style="color:#94a3b8;font-size:13px">Demo: admin@sec.com / admin123 | manager@sec.com / manager123 | viewer@sec.com / viewer123</p>
-<p id="msg" style="color:#f87171"></p></div>
+<html>
+<head><title>Secure Docs</title>
+<style>
+body{font-family:Arial;background:#f4f4f4;display:flex;justify-content:center;align-items:center;height:100vh}
+.box{background:white;padding:25px;border-radius:8px;width:320px;box-shadow:0 0 10px #ccc}
+input,select,button{width:100%;padding:10px;margin:8px 0;border-radius:5px;border:1px solid #ccc}
+button{background:#007bff;color:white;border:none;cursor:pointer}
+a{color:#007bff;text-decoration:none;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="box">
+  <div id="loginForm">
+    <h2>Login</h2>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p>Account ledu? <a onclick="showRegister()">Register</a></p>
+  </div>
 
-<div id="app" class="hidden">
-<div class="card flex"><div><b id="userInfo"></b> <span id="roleTag" class="tag"></span></div><button class="btn" onclick="logout()" style="margin-left:auto">Logout</button></div>
-<div class="flex"><div class="card" style="flex:2"><h3>Documents <button class="btn" onclick="loadDocs()" style="float:right">Refresh</button></h3><div id="docs"></div>
-<h4 style="margin-top:20px">Create Document</h4><input id="docTitle" placeholder="Title"><textarea id="docContent" placeholder="Content"></textarea><button class="btn" onclick="createDoc()">Create</button></div></div>
-</div></div>
+  <div id="registerForm" style="display:none;">
+    <h2>Register</h2>
+    <input type="email" id="regEmail" placeholder="Email">
+    <input type="password" id="regPassword" placeholder="Password">
+    <select id="regRole"><option value="Viewer">Viewer</option><option value="Manager">Manager</option></select>
+    <button onclick="register()">Register</button>
+    <p>Already account unda? <a onclick="showLogin()">Login</a></p>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+    <h3>Welcome <span id="userEmail"></span></h3>
+    <p>Role: <span id="userRole"></span></p>
+    <div id="createArea"><input id="docTitle" placeholder="Title"><input id="docContent" placeholder="Content"><button onclick="createDoc()">Create Document</button></div>
+    <div id="docList"></div>
+    <button onclick="logout()">Logout</button>
+  </div>
+</div>
+
 <script>
-const users = {
- "admin@sec.com": {pass:"admin123", role:"Admin"},
- "manager@sec.com": {pass:"manager123", role:"Manager"},
- "viewer@sec.com": {pass:"viewer123", role:"Viewer"}
-};
-let currentUser=null;
-let docs=[{id:1,title:"Company Policy",content:"Confidential policy document",owner:"admin@sec.com"}];
-function login(){
- let e=document.getElementById('email').value.trim().toLowerCase();
- let p=document.getElementById('password').value.trim();
- if(users[e] && users[e].pass===p){
-  currentUser={email:e,role:users[e].role};
-  document.getElementById('loginCard').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  document.getElementById('userInfo').innerText=e;
-  document.getElementById('roleTag').innerText=users[e].role;
-  loadDocs();
- } else { document.getElementById('msg').innerText='Invalid credentials - Use admin@sec.com / admin123'; }
+let users = JSON.parse(localStorage.getItem('users')) || [{email:'admin@sec.com',password:'admin123',role:'Admin'}];
+let docs = JSON.parse(localStorage.getItem('docs')) || [{title:'Company Policy',content:'Only admin can see this'}];
+function showRegister(){loginForm.style.display='none';registerForm.style.display='block';}
+function showLogin(){registerForm.style.display='none';loginForm.style.display='block';}
+function register(){
+  let e=regEmail.value,p=regPassword.value,r=regRole.value;
+  if(!e||!p){alert('Fill all');return;}
+  if(users.find(u=>u.email===e)){alert('Already exists');showLogin();return;}
+  users.push({email:e,password:p,role:r});localStorage.setItem('users',JSON.stringify(users));
+  alert('Register Success! Login chey');showLogin();
 }
-function logout(){ currentUser=null; document.getElementById('app').classList.add('hidden'); document.getElementById('loginCard').classList.remove('hidden');}
-function loadDocs(){ let h=''; docs.forEach(d=>{h+=`<div style="border:1px solid #334155;padding:10px;border-radius:8px;margin:8px 0"><b>${d.title}</b><p>${d.content}</p><small>${d.owner}</small></div>`}); document.getElementById('docs').innerHTML=h||'No documents';}
-function createDoc(){ let t=document.getElementById('docTitle').value; let c=document.getElementById('docContent').value; if(!t||!c)return alert('Fill details'); docs.push({id:Date.now(),title:t,content:c,owner:currentUser.email}); document.getElementById('docTitle').value=''; document.getElementById('docContent').value=''; loadDocs(); }
-</script></body></html>
+function login(){
+  let e=email.value,p=password.value;
+  let u=users.find(x=>x.email===e && x.password===p);
+  if(!u){alert('Wrong credentials');return;}
+  localStorage.setItem('currentUser',JSON.stringify(u));
+  showDashboard(u);
+}
+function showDashboard(u){
+  loginForm.style.display='none';registerForm.style.display='none';dashboard.style.display='block';
+  userEmail.innerText=u.email;userRole.innerText=u.role;renderDocs();
+}
+function renderDocs(){docList.innerHTML='';docs.forEach(d=>{docList.innerHTML+=`<div style="border:1px solid #ccc;padding:5px;margin:5px;"><b>${d.title}</b><br>${d.content}</div>`});}
+function createDoc(){let t=docTitle.value,c=docContent.value;if(!t||!c){alert('Fill');return;}docs.push({title:t,content:c});localStorage.setItem('docs',JSON.stringify(docs));renderDocs();docTitle.value='';docContent.value='';}
+function logout(){localStorage.removeItem('currentUser');dashboard.style.display='none';loginForm.style.display='block';}
+let cu=JSON.parse(localStorage.getItem('currentUser'));if(cu){showDashboard(cu);}
+</script>
+</body>
+</html>
